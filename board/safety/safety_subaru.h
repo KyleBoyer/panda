@@ -119,6 +119,13 @@ static int subaru_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int tx = 1;
   int addr = GET_ADDR(to_send);
 
+  if (!controls_allowed) {
+    tx = 0;
+  }
+  if (addr == 0x221) {
+    tx = 1;
+  }
+  
   if (!msg_allowed(to_send, SUBARU_TX_MSGS, SUBARU_TX_MSGS_LEN)) {
     tx = 0;
   }
@@ -200,7 +207,7 @@ static int subaru_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       // 0x40 Throttle
       // 0x139 Brake_Pedal
       int block_msg = ((addr == 0x40) || (addr == 0x139));
-      if (!block_msg) {
+      if (!block_msg || !controls_allowed) {
         bus_fwd = 2;  // Camera CAN
       }
     }
@@ -211,7 +218,7 @@ static int subaru_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       // 0x321 ES_DashStatus
       // 0x322 ES_LKAS_State
       int block_msg = ((addr == 0x122) || (addr == 0x221) || (addr == 0x321) || (addr == 0x322));
-      if (!block_msg) {
+      if (!block_msg || !controls_allowed) {
         bus_fwd = 0;  // Main CAN
       }
     }

@@ -83,7 +83,7 @@ class TestSubaruSafety(common.PandaSafetyTest):
       for t in range(-3000, 3000):
         self.safety.set_controls_allowed(enabled)
         self._set_prev_torque(t)
-        block = abs(t) > self.MAX_STEER or (not enabled and abs(t) > 0)
+        block = abs(t) > self.MAX_STEER or not enabled
         self.assertEqual(not block, self._tx(self._torque_msg(t)))
 
   def test_non_realtime_limit_up(self):
@@ -183,6 +183,14 @@ class TestSubaruGen2Safety(TestSubaruSafety):
     self.safety = libpandasafety_py.libpandasafety
     self.safety.set_safety_hooks(Panda.SAFETY_SUBARU_GEN2, 0)
     self.safety.init_tests()
+  
+  def test_steer_safety_check(self):
+    for enabled in [0, 1]:
+      for t in range(-3000, 3000):
+        self.safety.set_controls_allowed(enabled)
+        self._set_prev_torque(t)
+        block = abs(t) > self.MAX_STEER or (not enabled and abs(t) > 0)
+        self.assertEqual(not block, self._tx(self._torque_msg(t)))
 
   def _speed_msg(self, speed):
     # subaru safety doesn't use the scaled value, so undo the scaling
@@ -224,6 +232,14 @@ class TestSubaruHybridSafety(TestSubaruSafety):
     values = {"Cruise_Activated": enable, "Counter": self.cnt_cruise % 4}
     self.__class__.cnt_cruise += 1
     return self.packer.make_can_msg_panda("ES_DashStatus", 2, values)
+
+  def test_steer_safety_check(self):
+    for enabled in [0, 1]:
+      for t in range(-3000, 3000):
+        self.safety.set_controls_allowed(enabled)
+        self._set_prev_torque(t)
+        block = abs(t) > self.MAX_STEER or (not enabled and abs(t) > 0)
+        self.assertEqual(not block, self._tx(self._torque_msg(t)))
 
 
 if __name__ == "__main__":
