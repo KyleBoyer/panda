@@ -306,9 +306,9 @@ class TestHondaBoschSafety(TestHondaSafety):
 
 
 class TestHondaBoschHarnessSafety(TestHondaBoschSafety):
-  TX_MSGS = [[0xE4, 0], [0xE5, 0], [0x296, 1], [0x33D, 0], [0x33DA, 0], [0x33DB, 0]]  # Bosch Harness
+  TX_MSGS = [[0xE4, 0], [0xE5, 0], [0x296, 1], [0x33D, 0]]  # Bosch Harness
   RELAY_MALFUNCTION_BUS = 0
-  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
+  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D]}
   FWD_BUS_LOOKUP = {0: 2, 2: 0}
 
   PT_BUS = 1
@@ -330,9 +330,9 @@ class TestHondaBoschHarnessSafety(TestHondaBoschSafety):
 
 
 class TestHondaBoschGiraffeSafety(TestHondaBoschHarnessSafety):
-  TX_MSGS = [[0xE4, 2], [0xE5, 2], [0x296, 0], [0x33D, 2], [0x33DA, 2], [0x33DB, 2]]  # Bosch Giraffe
+  TX_MSGS = [[0xE4, 2], [0xE5, 2], [0x296, 0], [0x33D, 2]]  # Bosch Giraffe
   RELAY_MALFUNCTION_BUS = 2
-  FWD_BLACKLISTED_ADDRS = {1: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
+  FWD_BLACKLISTED_ADDRS = {1: [0xE4, 0xE5, 0x33D]}
   FWD_BUS_LOOKUP = {1: 2, 2: 1}
 
   PT_BUS = 0
@@ -387,7 +387,8 @@ class TestHondaBoschLongSafety(TestHondaBoschSafety):
 
   def test_brake_safety_check(self):
     for controls_allowed in [True, False]:
-      for accel in np.arange(0, self.MAX_BRAKE - 1, -0.1):
+      for accel in np.arange(0, self.MAX_BRAKE - 1, -0.01):
+        accel = round(accel, 2) # floats might not hit exact boundary conditions without rounding
         self.safety.set_controls_allowed(controls_allowed)
         send = self.MAX_BRAKE <= accel <= 0 if controls_allowed else accel == 0
         self.assertEqual(send, self._tx(self._send_gas_brake_msg(self.NO_GAS, accel)), (controls_allowed, accel))
@@ -395,7 +396,7 @@ class TestHondaBoschLongSafety(TestHondaBoschSafety):
 class TestHondaBoschLongHarnessSafety(TestHondaBoschLongSafety):
   TX_MSGS = [[0xE4, 1], [0x1DF, 1], [0x1EF, 1], [0x1FA, 1], [0x30C, 1], [0x33D, 1], [0x39F, 1], [0x18DAB0F1, 1]]  # Bosch Harness w/ gas and brakes
   RELAY_MALFUNCTION_BUS = 0
-  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
+  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D]}
   FWD_BUS_LOOKUP = {0: 2, 2: 0}
 
   PT_BUS = 1
@@ -410,7 +411,7 @@ class TestHondaBoschLongHarnessSafety(TestHondaBoschLongSafety):
 class TestHondaBoschLongGiraffeSafety(TestHondaBoschLongSafety):
   TX_MSGS = [[0xE4, 0], [0x1DF, 0], [0x1EF, 0], [0x1FA, 0], [0x30C, 0], [0x33D, 0], [0x39F, 0], [0x18DAB0F1, 0]]  # Bosch Giraffe w/ gas and brakes
   RELAY_MALFUNCTION_BUS = 2
-  FWD_BLACKLISTED_ADDRS = {1: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
+  FWD_BLACKLISTED_ADDRS = {1: [0xE4, 0xE5, 0x33D]}
   FWD_BUS_LOOKUP = {1: 2, 2: 1}
 
   PT_BUS = 0

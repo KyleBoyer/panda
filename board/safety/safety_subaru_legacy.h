@@ -11,15 +11,17 @@ const int SUBARU_L_STANDSTILL_THRSLD = 20;  // about 1kph
 const uint32_t SUBARU_L_BRAKE_THRSLD = 2; // filter sensor noise, max_brake is 400
 
 const CanMsg SUBARU_L_TX_MSGS[] = {{0x161, 0, 8}, {0x164, 0, 8}, {0x140, 2, 8}};
-const int SUBARU_L_TX_MSGS_LEN = sizeof(SUBARU_L_TX_MSGS) / sizeof(SUBARU_L_TX_MSGS[0]);
+#define SUBARU_L_TX_MSGS_LEN (sizeof(SUBARU_L_TX_MSGS) / sizeof(SUBARU_L_TX_MSGS[0]))
 
 // TODO: do checksum and counter checks after adding the signals to the outback dbc file
-AddrCheckStruct subaru_l_rx_checks[] = {
+AddrCheckStruct subaru_l_addr_checks[] = {
   {.msg = {{0x140, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{0x371, 0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{0x144, 0, 8, .expected_timestep = 50000U}, { 0 }, { 0 }}},
 };
-const int SUBARU_L_RX_CHECK_LEN = sizeof(subaru_l_rx_checks) / sizeof(subaru_l_rx_checks[0]);
+#define SUBARU_L_ADDR_CHECK_LEN (sizeof(subaru_l_addr_checks) / sizeof(subaru_l_addr_checks[0]))
+addr_checks subaru_l_rx_checks = {subaru_l_addr_checks, SUBARU_L_ADDR_CHECK_LEN};
+
 
 // TODO add legacy checksum check
 
@@ -28,7 +30,7 @@ bool subaru_l_flip_driver_torque = false;
 
 static int subaru_legacy_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  bool valid = addr_safety_check(to_push, subaru_l_rx_checks, SUBARU_L_RX_CHECK_LEN,
+  bool valid = addr_safety_check(to_push, &subaru_l_rx_checks,
                             NULL, NULL, NULL);
 
   if (valid && (GET_BUS(to_push) == 0)) {
@@ -167,11 +169,12 @@ static int subaru_legacy_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) 
   return bus_fwd;
 }
 
-static void subaru_legacy_init(int16_t param) {
+static const addr_checks* subaru_legacy_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();
   // Checking for flip driver torque from safety parameter
   subaru_l_flip_driver_torque = GET_FLAG(param, SUBARU_L_PARAM_FLIP_DRIVER_TORQUE);
+  return &subaru_l_rx_checks;
 }
 
 const safety_hooks subaru_legacy_hooks = {
@@ -180,6 +183,4 @@ const safety_hooks subaru_legacy_hooks = {
   .tx = subaru_legacy_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = subaru_legacy_fwd_hook,
-  .addr_check = subaru_l_rx_checks,
-  .addr_check_len = sizeof(subaru_l_rx_checks) / sizeof(subaru_l_rx_checks[0]),
 };
